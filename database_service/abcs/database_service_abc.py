@@ -45,3 +45,8 @@ class DatabaseServiceABC(Generic[S, T], ABC):
     async def delete_one(self, id: str) -> None:
         """Delete a single record from the database."""
         pass
+
+    @abstractmethod
+    async def create_metadata(self) -> None:
+        """Create metadata for the database schema."""
+        pass

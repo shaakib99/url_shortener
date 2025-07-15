@@ -1,11 +1,12 @@
 from database_service.abcs.database_service_abc import DatabaseServiceABC
 from database_service.service import DatabaseService
 from database_service.models import QueryModel
+from .schema import URLShortener
 import hashlib
 import base64
 class URLShortenerService:
     def __init__(self, database: DatabaseServiceABC | None = None):
-        self.database = database or DatabaseService(None)
+        self.database = database or DatabaseService(URLShortener)
 
     async def create_one(self, long_url: str):
         """Shortens a long URL and returns the short URL."""
@@ -16,6 +17,14 @@ class URLShortenerService:
             short_url = await self._create_short_url(long_url, salt + 1)
             salt += 1
         return await self.database.create_one(short_url)
+
+    async def get_one(self, short_url: str):
+        """Retrieves the long URL from a short URL."""
+        query = QueryModel(filter={"short_url": short_url}, limit=1)
+        result = await self.database.get_all(query)
+        if not result:
+            raise ValueError("Short URL not found")
+        return result[0].long_url
 
     async def get_all(self, query: QueryModel):
         """Returns all shortened URLs, optionally filtered by a query."""
@@ -29,7 +38,7 @@ class URLShortenerService:
     async def _short_url_exist(self, short_url: str):
         """Checks if a short URL already exists in the database."""
         query = QueryModel(filter={"short_url": short_url}, limit=1)
-        return await self.database.get_all(query) is not None
+        return len(await self.database.get_all(query)) > 0
     
     async def _create_short_url(self, long_url: str, salt = 0):
         """Asynchronously shortens a long URL and returns the short URL."""
