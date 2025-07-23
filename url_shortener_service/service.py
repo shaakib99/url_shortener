@@ -18,6 +18,7 @@ class URLShortenerService:
         while await self._short_url_exist(short_url):
             short_url = await self._create_short_url(long_url, salt + 1)
             salt += random.randint()
+        
         return await self.database.create_one(short_url)
 
     async def get_one(self, short_url: str):
