@@ -2,6 +2,7 @@ from database_service.abcs.database_service_abc import DatabaseServiceABC
 from database_service.service import DatabaseService
 from database_service.models import QueryModel
 from .schema import URLShortener
+from .models import CreateURLShortenerModel
 import hashlib
 import base64
 import random
@@ -10,13 +11,13 @@ class URLShortenerService:
     def __init__(self, database: DatabaseServiceABC | None = None):
         self.database = database or DatabaseService(URLShortener)
 
-    async def create_one(self, long_url: str):
+    async def create_one(self, data: CreateURLShortenerModel):
         """Shortens a long URL and returns the short URL."""
-        if (await self.get_all(QueryModel(filter={"long_url": long_url}))) > 0: raise ValueError("URL already shortened")
+        if (await self.get_all(QueryModel(filter={"long_url": data.long_url}))) > 0: raise ValueError("URL already shortened")
         salt = random.randint()
-        short_url = await self._create_short_url(long_url, salt)
+        short_url = await self._create_short_url(data.long_url, salt)
         while await self._short_url_exist(short_url):
-            short_url = await self._create_short_url(long_url, salt + 1)
+            short_url = await self._create_short_url(data.long_url, salt + 1)
             salt += random.randint()
         
         return await self.database.create_one(short_url)
